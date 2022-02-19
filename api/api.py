@@ -2,7 +2,7 @@ from datetime import datetime
 from http.client import HTTPException
 from uuid import UUID, uuid4
 
-from data_access.models import Task
+from data_access.models import Task, User
 from starlette import status
 from starlette.requests import Request
 from starlette.responses import Response
@@ -15,10 +15,12 @@ TODO = []
 
 
 @server.get('/todo', response_model=ListTasksSchema)
-def get_tasks():
-    return {
-        'tasks': TODO
-    }
+def get_tasks(request: Request):
+    user_id = request.state.user_id
+    with session_maker() as session:
+        tasks = [task.dict() for task in session.query(
+            User).filter(User.id == user_id).first().tasks]
+    return {'tasks': tasks}
 
 
 @server.post('/todo', response_model=GetTaskSchema, status_code=status.HTTP_201_CREATED)
