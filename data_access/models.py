@@ -8,7 +8,7 @@ Base = declarative_base()
 
 
 def generate_uuid():
-    return str(uuid4)
+    return str(uuid4())
 
 
 class User(Base):
