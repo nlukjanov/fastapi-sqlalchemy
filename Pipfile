@@ -12,6 +12,8 @@ uvicorn = "*"
 pyyaml = "*"
 pyjwt = "*"
 cryptography = "*"
+sqlalchemy = "*"
+alembic = "*"
 
 [requires]
 python_version = "3.1"
