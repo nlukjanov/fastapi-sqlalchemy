@@ -41,12 +41,14 @@ def create_task(request: Request, payload: CreateTaskSchema):
 
 
 @server.get('/todo/{task_id}', response_model=GetTaskSchema)
-def get_task(task_id: UUID):
-    for task in TODO:
-        if task['id'] == task_id:
-            return task
-    raise HTTPException(
-        status_code=404, detail=f'Task with ID {task_id} was not found')
+def get_task(request: Request, task_id: UUID):
+    with session_maker() as session:
+        task = session.query(Task).filter(
+            Task.id == str(task_id), Task.user_id == request.state.user_id).first()
+        if task is None:
+            raise HTTPException(
+                status_code=404, detail=f'Task with ID {task_id} was not found')
+        return task.dict()
 
 
 @server.put('/todo/{task_id}', response_model=GetTaskSchema)
