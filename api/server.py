@@ -1,10 +1,13 @@
 from pathlib import Path
 
 import yaml
+from fastapi import FastAPI
 from jwt import (ExpiredSignatureError, ImmatureSignatureError,
                  InvalidAlgorithmError, InvalidAudienceError, InvalidKeyError,
                  InvalidSignatureError, InvalidTokenError,
                  MissingRequiredClaimError)
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 from starlette import status
 from starlette.middleware.base import (BaseHTTPMiddleware,
                                        RequestResponseEndpoint)
@@ -12,14 +15,15 @@ from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 
-from auth import decode_and_validate_token
-from fastapi import FastAPI
+from api.auth import decode_and_validate_token
 
 server = FastAPI(debug=True)
 
-oas_doc = yaml.safe_load((Path(__file__).parent / "oas.yaml").read_text())
+oas_doc = yaml.safe_load((Path(__file__).parent / "../oas.yaml").read_text())
 
 server.openapi = lambda: oas_doc
+
+session_maker = sessionmaker(bind=create_engine('sqlite:///models.db'))
 
 
 class AuthorizeRequestMiddleware(BaseHTTPMiddleware):
@@ -68,4 +72,4 @@ server.add_middleware(
     allow_headers=['*']
 )
 
-import api
+import api.api
