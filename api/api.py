@@ -70,10 +70,12 @@ def update_task(request: Request, task_id: UUID, payload: CreateTaskSchema):
 
 
 @server.delete('/todo/{task_id}', status_code=status.HTTP_204_NO_CONTENT, response_class=Response)
-def delete_task(task_id: UUID):
-    for index, task in enumerate(TODO):
-        if task['id'] == task_id:
-            TODO.pop(index)
-            return
-    raise HTTPException(
-        status_code=404, detail=f'Task with ID {task_id} was not found')
+def delete_task(request: Request, task_id: UUID):
+    with session_maker() as session:
+        task = session.query(Task).filter(
+            Task.id == str(task_id), Task.user_id == request.state.user_id).first()
+        if task is None:
+            raise HTTPException(
+                status_code=404, detail=f'Task with ID {task_id} was not found')
+        session.delete(task)
+        session.commit()
