@@ -1,3 +1,4 @@
+from cgi import parse_multipart
 from datetime import datetime
 from http.client import HTTPException
 from uuid import UUID, uuid4
@@ -52,15 +53,20 @@ def get_task(request: Request, task_id: UUID):
 
 
 @server.put('/todo/{task_id}', response_model=GetTaskSchema)
-def update_task(task_id: UUID, payload: CreateTaskSchema):
-    for task in TODO:
-        if task['id'] == task_id:
-            task.update(payload.dict())
-            task['status'] = task['status'].value
-            task['priority'] = task['priority'].value
-            return task
-    raise HTTPException(
-        status_code=404, detail=f'Task with ID {task_id} was not found')
+def update_task(request: Request, task_id: UUID, payload: CreateTaskSchema):
+    with session_maker() as session:
+        task = session.query(Task).filter(
+            Task.id == str(task_id), Task.user_id == request.state.user_id).first()
+        if task is None:
+            raise HTTPException(
+                status_code=404, detail=f'Task with ID {task_id} was not found')
+        task.status = payload.status.value
+        task.priority = payload.priority.value
+        task.task = payload.task
+        task.updated = datetime.utcnow()
+        session.add(task)
+        session.commit()
+        return task.dict()
 
 
 @server.delete('/todo/{task_id}', status_code=status.HTTP_204_NO_CONTENT, response_class=Response)
